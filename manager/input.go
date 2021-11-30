@@ -16,7 +16,7 @@ type StateInput struct {
 	Id       string
 	Name     string
 	Type     string
-	Layer    *int
+	Stack    map[string]int
 	Cost     int
 	Conflict []string
 	Mods     []string

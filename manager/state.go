@@ -9,7 +9,7 @@ type State struct {
 	Id       string
 	Name     string
 	Type     string
-	Layer    *int
+	Stack    map[string]int
 	Cost     int
 	Conflict []string
 	Block    []string
@@ -30,7 +30,7 @@ func (ths *GatesManager) addState(id string) int {
 					Id:       modId,
 					Name:     strings.ReplaceAll(state.Name, "{}", mod),
 					Type:     state.Type,
-					Layer:    state.Layer,
+					Stack:    state.Stack,
 					Cost:     state.Cost,
 					Conflict: state.Conflict,
 					Block:    state.Block,
@@ -46,7 +46,7 @@ func (ths *GatesManager) addState(id string) int {
 					Id:       state.Id,
 					Name:     state.Name,
 					Type:     state.Type,
-					Layer:    state.Layer,
+					Stack:    state.Stack,
 					Cost:     state.Cost,
 					Conflict: state.Conflict,
 					Block:    state.Block,
@@ -94,7 +94,7 @@ loop:
 				Id:       modId,
 				Name:     strings.ReplaceAll(state.Name, "{}", mod),
 				Type:     state.Type,
-				Layer:    state.Layer,
+				Stack:    state.Stack,
 				Cost:     state.Cost,
 				Conflict: state.Conflict,
 				Block:    state.Block,
@@ -109,7 +109,7 @@ loop:
 				Id:       state.Id,
 				Name:     state.Name,
 				Type:     state.Type,
-				Layer:    state.Layer,
+				Stack:    state.Stack,
 				Cost:     state.Cost,
 				Conflict: state.Conflict,
 				Block:    state.Block,
@@ -137,19 +137,30 @@ func (ths *GatesManager) GenerateInitialState(manditoryStates []string, pointMin
 	}
 }
 
+func (ths *GatesManager) AddRandomState() State {
+	state := ths.generateAdditionalState()
+	ths.CurrentStates = append(ths.CurrentStates, state)
+	return state
+}
+
 func (ths *GatesManager) RemoveState(id string, points int) (bool, State) {
-	highestLayer := 0
+	highestStacks := make(map[string]int)
 	for _, state := range ths.CurrentStates {
-		if state.Layer != nil && *state.Layer > highestLayer {
-			highestLayer = *state.Layer
+		for stack, height := range state.Stack {
+			if _, ok := highestStacks[stack]; ok && highestStacks[stack] >= height {
+				continue
+			}
+			highestStacks[stack] = height
 		}
 	}
 
 	removeIndex := -1
 	for i, state := range ths.CurrentStates {
 		if state.Id == id {
-			if state.Layer != nil && *state.Layer < highestLayer {
-				return false, state
+			for stack, height := range state.Stack {
+				if height < highestStacks[stack] {
+					return false, state
+				}
 			}
 			if state.Cost > points {
 				return false, state
@@ -170,20 +181,26 @@ func (ths *GatesManager) RemoveState(id string, points int) (bool, State) {
 }
 
 func (ths *GatesManager) RemoveRandomState(points int) State {
-	highestLayer := 0
+	highestStacks := make(map[string]int)
 	for _, state := range ths.CurrentStates {
-		if state.Layer != nil && *state.Layer > highestLayer {
-			highestLayer = *state.Layer
+		for stack, height := range state.Stack {
+			if _, ok := highestStacks[stack]; ok && highestStacks[stack] >= height {
+				continue
+			}
+			highestStacks[stack] = height
 		}
 	}
 
 	possibleRemovals := []int{}
+loop:
 	for i, state := range ths.CurrentStates {
-		if state.Layer != nil && *state.Layer < highestLayer {
-			continue
+		for stack, height := range state.Stack {
+			if height < highestStacks[stack] {
+				continue loop
+			}
 		}
 		if state.Cost > points {
-			continue
+			continue loop
 		}
 		possibleRemovals = append(possibleRemovals, i)
 	}

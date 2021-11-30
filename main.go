@@ -19,10 +19,6 @@ func initGame() *manager.GatesManager {
 	man := manager.NewGatesManager(input)
 	man.GenerateInitialState(input.Manditory.States, 40)
 
-	// for _, state := range man.CurrentStates {
-	// 	println("You are " + state.Name)
-	// }
-
 	return man
 }
 
@@ -45,7 +41,9 @@ func main() {
 		}
 		println("win:\tEnd the game (20)")
 		println("You have " + strconv.Itoa(points) + " points")
-		println("Enter id to use points buy options or 'c' to continue")
+		println("Enter id to use points buy options")
+		println("Enter 'c' to continue")
+		println("Enter 's' to sacrifice")
 		console.Scan()
 		in := console.Text()
 		switch in {
@@ -58,20 +56,38 @@ func main() {
 			gate := man.NextGate(target)
 			target = gate.Target
 			println(gate.Description())
-
-			console.Scan()
-			print("Cum check: ")
-			console.Scan()
-			res := console.Text()
-			if res == "y" {
-				man.OpenGate(gate, 1)
-			} else {
-				man.OpenGate(gate, 0)
+		complete:
+			for {
+				if gate.Type == manager.BLANK {
+					man.OpenGate(gate)
+					points += gate.Value
+					if gate.Reset {
+						target = ""
+					}
+					break complete
+				}
+				println("Enter 'c' to complete")
+				println("Enter 's' to skip")
+				console.Scan()
+				in = console.Text()
+				switch in {
+				case "s":
+					state := man.AddRandomState()
+					println("Punish: Add " + state.Name)
+					fallthrough
+				case "c":
+					man.OpenGate(gate)
+					points += gate.Value
+					if gate.Reset {
+						target = ""
+					}
+					break complete
+				}
 			}
-			points += gate.Value
-			if gate.Reset {
-				target = ""
-			}
+		case "s":
+			state := man.AddRandomState()
+			points += state.Cost
+			println("Added " + state.Name)
 		default: //buy
 			success, state := man.RemoveState(in, points)
 			if success {

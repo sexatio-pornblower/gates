@@ -138,14 +138,11 @@ func (ths *GatesManager) NextGate(target string) Gate {
 	return possibleGates[rand.Intn(len(possibleGates))]
 }
 
-func (ths *GatesManager) OpenGate(gate Gate, penalty int) {
+func (ths *GatesManager) OpenGate(gate Gate) {
 	if gate.Penalty != nil {
 		for i := 0; i < *gate.Penalty; i++ {
 			ths.CurrentStates = append(ths.CurrentStates, ths.generateAdditionalState())
 		}
-	}
-	for i := 0; i < penalty; i++ {
-		ths.CurrentStates = append(ths.CurrentStates, ths.generateAdditionalState())
 	}
 	ths.lastGateId = gate.Id
 	ths.currentIntensity++
